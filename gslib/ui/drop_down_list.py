@@ -8,25 +8,6 @@ from gslib.ui import control
 from gslib import window
 
 
-def list_func(owner, val, text=None):
-    def func():
-        if val is None:
-            owner.selected_name = "<None>"
-            owner.selected = None
-        else:
-            if text is None:
-                owner.selected_name = str(val)
-            else:
-                owner.selected_name = text
-            if isinstance(owner.items, list):
-                owner.selected = val
-            else:
-                owner.selected = owner.items[val]
-        if owner.function is not None:
-            owner.function()
-    return func
-
-
 class DropDownList(control.Control):
 
     __metaclass__ = exec_on_change_meta(["update_buttons"])
@@ -102,7 +83,7 @@ class DropDownList(control.Control):
             b.delete()
 
         self.drop_buttons = [
-            button.DefaultButton(self, list_func(self, None), size=self.size, font_size=self.font_size, visible=False,
+            button.DefaultButton(self, self.list_func(None), size=self.size, font_size=self.font_size, visible=False,
                                  text=u"<None>", border_color=self.border_color, border_width=self.border_width,
                                  color=self.color, batch=self._batch, group=self._drop_group)]
 
@@ -115,7 +96,7 @@ class DropDownList(control.Control):
                 else:
                     t = str(i)
                 self.drop_buttons.append(
-                    button.DefaultButton(self, list_func(self, i, t), size=self.size, font_size=self.font_size,
+                    button.DefaultButton(self, self.list_func(i, t), size=self.size, font_size=self.font_size,
                                          visible=False, text=t, border_color=self.border_color,
                                          border_width=self.border_width, color=self.color, batch=self._batch,
                                          group=self._drop_group))
@@ -128,7 +109,7 @@ class DropDownList(control.Control):
                 else:
                     t = unicode(k)
                 self.drop_buttons.append(
-                    button.DefaultButton(self, list_func(self, k, t), size=self.size, font_size=self.font_size,
+                    button.DefaultButton(self, self.list_func(k, t), size=self.size, font_size=self.font_size,
                                          visible=False, text=t, border_color=self.border_color,
                                          border_width=self.border_width, color=self.color, batch=self._batch,
                                          group=self._drop_group))
@@ -174,7 +155,7 @@ class DropDownList(control.Control):
 
         # if move off edge, close list
         # if move off bottom or top, close list
-        if abs(x - (pos[0] + w)) > w or h_ind > n_drop_button or h_ind < 0:
+        if not self.x <= x < self.x + self.width:
             self.open = False
             return
 
@@ -190,7 +171,7 @@ class DropDownList(control.Control):
             if b.in_bounds(x, y):
                 high_b = b
 
-        if high_b:
+        if high_b is not None:
             if high_b.border_color != self.high_border_color:
                 high_b.border_color = self.high_border_color
             if high_b.color != self.high_color:
@@ -200,7 +181,7 @@ class DropDownList(control.Control):
         self.set_to_value(None)
 
     def set_to_value(self, value):
-        list_func(self, value)()
+        self.list_func(value)()
 
     def _update_position(self):
         self.update_buttons()
@@ -219,6 +200,32 @@ class DropDownList(control.Control):
             if self.open:
                 for b in self.drop_buttons:
                     b.draw()
+
+    def in_bounds(self, x, y):
+        if self.open:
+            height = self.height
+        else:
+            height = self.height
+        return (self.x <= x < self.x + self.width and
+                self.y <= y < self.y + height)
+
+    def list_func(self, val, text=None):
+        def func():
+            if val is None:
+                self.selected_name = "<None>"
+                self.selected = None
+            else:
+                if text is None:
+                    self.selected_name = str(val)
+                else:
+                    self.selected_name = text
+                if isinstance(self.items, list):
+                    self.selected = val
+                else:
+                    self.selected = self.items[val]
+            if self.function is not None:
+                self.function()
+        return func
 
 
 class DropDownListSlider(DropDownList):
@@ -275,4 +282,5 @@ class DropDownListSlider(DropDownList):
 
     def draw(self):
         super(DropDownListSlider, self).draw()
-        self.slider.draw()
+        if self.open:
+            self.slider.draw()
