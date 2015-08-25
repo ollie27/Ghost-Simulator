@@ -336,6 +336,8 @@ class Game(pyglet.event.EventDispatcher):
                     self.editor.update()
 
                 self.update_camera()
+            else:
+                window.invalid = False
 
         except self.update_exception_hook[0] as exception:
             self.update_exception_hook[1](exception)
